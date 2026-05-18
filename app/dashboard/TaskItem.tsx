@@ -3,11 +3,21 @@
 import { useState, useTransition } from "react";
 import { toggleTask, updateTask, deleteTask } from "@/app/tasks/actions";
 
+// Colour for each category pill
+const CATEGORY_COLOURS: Record<string, string> = {
+  Work:     "bg-blue-100 text-blue-700",
+  School:   "bg-amber-100 text-amber-700",
+  Health:   "bg-green-100 text-green-700",
+  Personal: "bg-pink-100 text-pink-700",
+  Other:    "bg-gray-100 text-gray-500",
+};
+
 type Task = {
   id: string;
   title: string;
   completed: boolean;
   points: number;
+  category: string;
 };
 
 export default function TaskItem({ task }: { task: Task }) {
@@ -144,6 +154,15 @@ export default function TaskItem({ task }: { task: Task }) {
           }`}
         >
           {task.title}
+        </span>
+
+        {/* Category label */}
+        <span
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+            CATEGORY_COLOURS[task.category] ?? CATEGORY_COLOURS.Other
+          }`}
+        >
+          {task.category}
         </span>
 
         {/* Points badge — shows the task's own points value */}

@@ -23,16 +23,20 @@ export async function createTask(
     const title = formData.get("title") as string;
     if (!title?.trim()) return { error: "Task title cannot be empty." };
 
-    // Read the chosen points value; clamp to 1–50, default to 10 if invalid
+    // Read and validate points (1–50, default 10)
     const rawPoints = parseInt(formData.get("points") as string, 10);
-    const points = !isNaN(rawPoints) && rawPoints >= 1 && rawPoints <= 50
-      ? rawPoints
-      : 10;
+    const points = !isNaN(rawPoints) && rawPoints >= 1 && rawPoints <= 50 ? rawPoints : 10;
+
+    // Read and validate category
+    const VALID_CATEGORIES = ["Work", "School", "Health", "Personal", "Other"];
+    const rawCategory = formData.get("category") as string;
+    const category = VALID_CATEGORIES.includes(rawCategory) ? rawCategory : "Other";
 
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
       title: title.trim(),
       points,
+      category,
     });
 
     if (error) return { error: "Could not save the task. Please try again." };

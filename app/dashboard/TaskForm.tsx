@@ -4,47 +4,39 @@ import { useRef, useState, useTransition } from "react";
 import { createTask } from "@/app/tasks/actions";
 
 const PRESETS = [1, 5, 10, 20];
+const CATEGORIES = ["Work", "School", "Health", "Personal", "Other"] as const;
 
 export default function TaskForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // selectedPreset = which preset button is active (null means custom input is active)
+  // Points state
   const [selectedPreset, setSelectedPreset] = useState<number | null>(10);
   const [customValue, setCustomValue] = useState("");
   const [customError, setCustomError] = useState<string | null>(null);
 
-  // Work out the final points value to send with the form
   const isCustomActive = selectedPreset === null;
   const customNum = parseInt(customValue, 10);
   const isCustomValid = customValue !== "" && !isNaN(customNum) && customNum >= 1 && customNum <= 50;
   const effectivePoints = selectedPreset !== null ? selectedPreset : (isCustomValid ? customNum : 10);
-
-  // Disable submit if the custom input is active but has an invalid value
   const canSubmit = !isCustomActive || isCustomValid;
 
   function handlePresetClick(pts: number) {
     setSelectedPreset(pts);
-    setCustomValue("");       // clear the custom input
+    setCustomValue("");
     setCustomError(null);
   }
 
   function handleCustomChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
-    setSelectedPreset(null);  // deselect all preset buttons
+    setSelectedPreset(null);
     setCustomValue(val);
-
-    // Validate while typing (but only show error when the field is not empty)
     if (val === "") {
       setCustomError(null);
     } else {
       const num = parseInt(val, 10);
-      if (isNaN(num) || num < 1 || num > 50) {
-        setCustomError("Points must be between 1 and 50");
-      } else {
-        setCustomError(null);
-      }
+      setCustomError(isNaN(num) || num < 1 || num > 50 ? "Points must be between 1 and 50" : null);
     }
   }
 
@@ -57,7 +49,6 @@ export default function TaskForm() {
         setError(result.error);
       } else {
         formRef.current?.reset();
-        // Reset points selector back to the default after a successful save
         setSelectedPreset(10);
         setCustomValue("");
         setCustomError(null);
@@ -68,11 +59,9 @@ export default function TaskForm() {
   return (
     <div className="mb-6">
 
-      {/* ── Points selector row ── */}
+      {/* ── Points selector ── */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <span className="text-xs text-gray-400 font-medium">Points:</span>
-
-        {/* Preset buttons */}
         {PRESETS.map((pts) => (
           <button
             key={pts}
@@ -87,8 +76,6 @@ export default function TaskForm() {
             {pts === 1 ? "1 pt" : `${pts} pts`}
           </button>
         ))}
-
-        {/* Custom number input */}
         <input
           type="number"
           value={customValue}
@@ -100,21 +87,31 @@ export default function TaskForm() {
             customError
               ? "border-red-300 focus:ring-red-300"
               : isCustomActive
-              ? "border-violet-400 ring-1 ring-violet-400"   // highlight when active
+              ? "border-violet-400 ring-1 ring-violet-400"
               : "border-gray-200 focus:ring-violet-400"
           }`}
         />
       </div>
-
-      {/* Custom input validation error */}
       {customError && (
         <p className="text-xs text-red-500 mb-2 pl-1">{customError}</p>
       )}
 
+      {/* ── Category selector ── */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xs text-gray-400 font-medium">Category:</span>
+        <select
+          name="category"
+          defaultValue="Other"
+          className="border border-gray-200 rounded-lg px-3 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+        >
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
+
       {/* ── Task input row ── */}
       <form ref={formRef} action={handleSubmit} className="flex gap-2">
-
-        {/* Hidden field carries the resolved points value into createTask */}
         <input type="hidden" name="points" value={effectivePoints} />
 
         <input
@@ -126,7 +123,6 @@ export default function TaskForm() {
             error ? "border-red-300 focus:ring-red-300" : "border-gray-200 focus:ring-violet-400"
           }`}
         />
-
         <button
           type="submit"
           disabled={isPending || !canSubmit}
@@ -136,13 +132,11 @@ export default function TaskForm() {
         </button>
       </form>
 
-      {/* Server action error */}
       {error && (
         <p className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
           ⚠️ {error}
         </p>
       )}
-
     </div>
   );
 }
