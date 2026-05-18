@@ -85,56 +85,64 @@ export async function toggleTask(
 
     if (taskError) return { error: "Could not update the task. Please try again." };
 
-    // Fetch profile for points + streak + timezone
+    // Fetch profile for points + streak + timezone + vacation mode
     const { data: profile } = await supabase
       .from("profiles")
-      .select("total_points, current_streak, last_completed_date, timezone")
+      .select("total_points, current_streak, last_completed_date, timezone, vacation_mode")
       .eq("id", user.id)
       .single();
 
-    const currentPoints = profile?.total_points ?? 0;
-    // Use the task's real points value, not a hardcoded 10
-    const pointsChange = nowCompleted ? taskPoints : -taskPoints;
-    const newPoints = Math.max(0, currentPoints + pointsChange);
+    const vacationMode   = profile?.vacation_mode ?? false;
+    const currentPoints  = profile?.total_points ?? 0;
+    const pointsChange   = nowCompleted ? taskPoints : -taskPoints;
+    const newPoints      = Math.max(0, currentPoints + pointsChange);
 
-    if (nowCompleted) {
-      const tz = profile?.timezone ?? "UTC";
-      const localDate = (d: Date) =>
-        new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const today = localDate(now);
-      const yesterdayStr = localDate(yesterday);
+    if (!vacationMode) {
+      if (nowCompleted) {
+        const tz = profile?.timezone ?? "UTC";
+        const toLocal = (d: Date) =>
+          new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+        const now = new Date();
+        const today = toLocal(now);
+        const daysAgo = (n: number) => {
+          const d = new Date(now);
+          d.setDate(d.getDate() - n);
+          return toLocal(d);
+        };
 
-      const lastDate = profile?.last_completed_date ?? null;
-      const currentStreak = profile?.current_streak ?? 0;
+        const lastDate = profile?.last_completed_date ?? null;
+        const currentStreak = profile?.current_streak ?? 0;
+        const graceDays = currentStreak >= 20 ? 2 : currentStreak >= 10 ? 1 : 0;
 
-      let newStreak: number;
-      if (!lastDate) {
-        newStreak = 1;
-      } else if (lastDate === today) {
-        newStreak = currentStreak;
-      } else if (lastDate === yesterdayStr) {
-        newStreak = currentStreak + 1;
+        let newStreak: number;
+        if (!lastDate) {
+          newStreak = 1;
+        } else if (lastDate === today) {
+          newStreak = currentStreak;
+        } else if (lastDate === daysAgo(1)) {
+          newStreak = currentStreak + 1;
+        } else {
+          const inGrace = Array.from({ length: graceDays }, (_, i) => daysAgo(i + 2))
+            .includes(lastDate);
+          newStreak = inGrace ? currentStreak : 1;
+        }
+
+        await supabase
+          .from("profiles")
+          .update({
+            total_points: newPoints,
+            current_streak: newStreak,
+            last_completed_date: today,
+          })
+          .eq("id", user.id);
       } else {
-        newStreak = 1;
+        await supabase
+          .from("profiles")
+          .update({ total_points: newPoints })
+          .eq("id", user.id);
       }
-
-      await supabase
-        .from("profiles")
-        .update({
-          total_points: newPoints,
-          current_streak: newStreak,
-          last_completed_date: today,
-        })
-        .eq("id", user.id);
-    } else {
-      await supabase
-        .from("profiles")
-        .update({ total_points: newPoints })
-        .eq("id", user.id);
     }
+    // vacation mode on: task state changes but profile (points/streak) untouched
 
     revalidatePath("/dashboard");
     return { error: null };
@@ -279,5 +287,29 @@ export async function deleteTask(
     return { error: null };
   } catch {
     return { error: "Something went wrong. Please try again." };
+  }
+}
+
+// ─── Vacation mode ────────────────────────────────────────────────────────────
+
+export async function setVacationMode(
+  enabled: boolean
+): Promise<{ error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "You must be logged in." };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ vacation_mode: enabled })
+      .eq("id", user.id);
+
+    if (error) return { error: "Could not update vacation mode." };
+
+    revalidatePath("/dashboard");
+    return { error: null };
+  } catch {
+    return { error: "Something went wrong." };
   }
 }

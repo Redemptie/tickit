@@ -11,12 +11,9 @@ export default function TaskForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Points state
   const [selectedPreset, setSelectedPreset] = useState<number | null>(10);
   const [customValue, setCustomValue] = useState("");
   const [customError, setCustomError] = useState<string | null>(null);
-
-  // Category state
   const [selectedCategory, setSelectedCategory] = useState("Other");
 
   const isCustomActive = selectedPreset === null;
@@ -64,17 +61,17 @@ export default function TaskForm() {
     <div className="mb-6">
 
       {/* ── Points selector ── */}
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <span className="text-xs text-gray-400 font-medium">Points:</span>
+      <div className="flex items-center gap-1 sm:gap-2 mb-2">
+        <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-medium shrink-0">Points:</span>
         {PRESETS.map((pts) => (
           <button
             key={pts}
             type="button"
             onClick={() => handlePresetClick(pts)}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+            className={`px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold transition-colors shrink-0 ${
               selectedPreset === pts
                 ? "bg-violet-600 text-white"
-                : "bg-gray-100 text-gray-500 hover:bg-violet-100 hover:text-violet-600"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-violet-100 dark:hover:bg-violet-900/40 hover:text-violet-600 dark:hover:text-violet-300"
             }`}
           >
             {pts === 1 ? "1 pt" : `${pts} pts`}
@@ -87,12 +84,12 @@ export default function TaskForm() {
           placeholder="custom"
           min="1"
           max="50"
-          className={`w-20 border rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
+          className={`w-14 sm:w-20 bg-white dark:bg-gray-800 border rounded-lg px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 transition-colors ${
             customError
               ? "border-red-300 focus:ring-red-300"
               : isCustomActive
               ? "border-violet-400 ring-1 ring-violet-400"
-              : "border-gray-200 focus:ring-violet-400"
+              : "border-gray-200 dark:border-gray-600 focus:ring-violet-400"
           }`}
         />
       </div>
@@ -102,11 +99,11 @@ export default function TaskForm() {
 
       {/* ── Category selector ── */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs text-gray-400 font-medium">Category:</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Category:</span>
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+          className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1 text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
         >
           {CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>{cat}</option>
@@ -124,8 +121,8 @@ export default function TaskForm() {
           type="text"
           required
           placeholder="Add a new task..."
-          className={`flex-1 border rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 text-sm transition-colors ${
-            error ? "border-red-300 focus:ring-red-300" : "border-gray-200 focus:ring-violet-400"
+          className={`flex-1 bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 text-sm transition-colors ${
+            error ? "border-red-300 focus:ring-red-300" : "border-gray-200 dark:border-gray-600 focus:ring-violet-400"
           }`}
         />
         <button
@@ -138,7 +135,7 @@ export default function TaskForm() {
       </form>
 
       {error && (
-        <p className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+        <p className="mt-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2">
           ⚠️ {error}
         </p>
       )}

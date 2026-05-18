@@ -36,11 +36,12 @@ const TIMEZONES = [
 export default function TimezoneBar({ initialTimezone }: { initialTimezone: string }) {
   const [timezone, setTimezone] = useState(initialTimezone);
   const [time, setTime] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();
 
-  // Ref always holds the latest timezone so the interval never needs to restart
   const tzRef = useRef(timezone);
   tzRef.current = timezone;
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function tick() {
@@ -57,11 +58,23 @@ export default function TimezoneBar({ initialTimezone }: { initialTimezone: stri
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []); // runs once; timezone changes are picked up via tzRef
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const tz = e.target.value;
-    setTimezone(tz);          // updates tzRef.current on next render
+    setTimezone(tz);
+    setIsOpen(false);
     startTransition(async () => {
       await updateTimezone(tz);
     });
@@ -70,18 +83,49 @@ export default function TimezoneBar({ initialTimezone }: { initialTimezone: stri
   const inList = TIMEZONES.some((t) => t.value === timezone);
 
   return (
-    <div className="hidden sm:flex items-center gap-2">
-      <span className="text-gray-400 text-sm font-mono">{time}</span>
-      <select
-        value={timezone}
-        onChange={handleChange}
-        className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white max-w-[210px]"
-      >
-        {!inList && <option value={timezone}>{timezone}</option>}
-        {TIMEZONES.map((tz) => (
-          <option key={tz.value} value={tz.value}>{tz.label}</option>
-        ))}
-      </select>
-    </div>
+    <>
+      {/* Mobile: globe icon + dropdown panel */}
+      <div className="relative sm:hidden" ref={panelRef}>
+        <button
+          onClick={() => setIsOpen((v) => !v)}
+          aria-label="Change timezone"
+          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <span className="text-base">🌐</span>
+          <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{time.slice(0, 5)}</span>
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-4 z-50 w-72">
+            <p className="text-2xl font-mono font-bold text-gray-700 dark:text-gray-200 text-center mb-3">{time}</p>
+            <select
+              value={timezone}
+              onChange={handleChange}
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm text-gray-600 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            >
+              {!inList && <option value={timezone}>{timezone}</option>}
+              {TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: inline clock + selector */}
+      <div className="hidden sm:flex items-center gap-2">
+        <span className="text-gray-400 dark:text-gray-500 text-sm font-mono">{time}</span>
+        <select
+          value={timezone}
+          onChange={handleChange}
+          className="border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400 max-w-[210px]"
+        >
+          {!inList && <option value={timezone}>{timezone}</option>}
+          {TIMEZONES.map((tz) => (
+            <option key={tz.value} value={tz.value}>{tz.label}</option>
+          ))}
+        </select>
+      </div>
+    </>
   );
 }

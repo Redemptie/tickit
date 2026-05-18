@@ -8,7 +8,9 @@ import { logout } from "@/app/auth/actions";
 import TaskForm from "@/app/dashboard/TaskForm";
 import TaskItem from "@/app/dashboard/TaskItem";
 import TimezoneBar from "@/app/dashboard/TimezoneBar";
+import VacationToggle from "@/app/dashboard/VacationToggle";
 import ClientAuthRedirect from "@/app/dashboard/ClientAuthRedirect";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // --- Badge helpers ---
 
@@ -37,7 +39,7 @@ export default async function DashboardPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date")
+    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date, vacation_mode")
     .eq("id", user.id)
     .single();
 
@@ -49,7 +51,7 @@ export default async function DashboardPage() {
   const todayLocal = localDate(now);
 
   // Daily reset — if the last reset wasn't today, uncheck all completed tasks
-  if (profile && profile.last_reset_date !== todayLocal) {
+  if (profile && (profile.last_reset_date ?? "").slice(0, 10) !== todayLocal) {
     await supabase
       .from("tasks")
       .update({ completed: false, completed_at: null })
@@ -75,33 +77,53 @@ export default async function DashboardPage() {
   const completedCount = tasks?.filter((t) => t.completed).length ?? 0;
   const totalCount     = tasks?.length ?? 0;
 
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const streakAtRisk =
+  const earnedToday   = tasks?.filter((t) => t.completed).reduce((s, t) => s + t.points, 0) ?? 0;
+  const possibleToday = tasks?.reduce((s, t) => s + t.points, 0) ?? 0;
+  const dailyPercent  = possibleToday > 0 ? Math.round((earnedToday / possibleToday) * 100) : 0;
+  const circColor     = dailyPercent <= 30 ? "#ef4444"
+                      : dailyPercent <= 50 ? "#f97316"
+                      : dailyPercent <= 64 ? "#eab308"
+                      :                      "#22c55e";
+  const circTextColor = dailyPercent <= 30 ? "text-red-500"
+                      : dailyPercent <= 50 ? "text-orange-500"
+                      : dailyPercent <= 64 ? "text-yellow-500"
+                      :                      "text-green-500";
+  const circR         = 18;
+  const circC         = 2 * Math.PI * circR;
+  const circOffset    = circC * (1 - Math.min(dailyPercent, 100) / 100);
+
+  // At-risk = last completion was exactly on the final grace day (next miss resets streak)
+  const graceDays      = currentStreak >= 20 ? 2 : currentStreak >= 10 ? 1 : 0;
+  const lastGraceDay   = new Date(now);
+  lastGraceDay.setDate(lastGraceDay.getDate() - (graceDays + 1));
+  const streakAtRisk   =
     currentStreak > 0 &&
-    profile?.last_completed_date === localDate(yesterday);
+    profile?.last_completed_date === localDate(lastGraceDay);
+
+  const vacationMode = profile?.vacation_mode ?? false;
 
   const badge    = getBadge(totalPoints);
   const progress = getBadgeProgress(totalPoints);
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
 
       {/* ── Nav bar ── */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <span className="text-2xl">✅</span>
           <span className="text-xl font-extrabold text-violet-600">TickIt</span>
         </div>
         <div className="flex items-center gap-3">
           <TimezoneBar initialTimezone={tz} />
-          <span className="text-gray-400 text-sm hidden sm:block truncate max-w-[160px]">
+          <span className="text-gray-400 dark:text-gray-500 text-sm hidden sm:block truncate max-w-[160px]">
             {user.email}
           </span>
+          <ThemeToggle />
           <form action={logout}>
             <button
               type="submit"
-              className="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-600 text-sm font-semibold px-4 py-2 rounded-xl transition-all"
+              className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 active:scale-95 text-gray-600 dark:text-gray-300 text-sm font-semibold px-4 py-2 rounded-xl transition-all"
             >
               Log Out
             </button>
@@ -114,26 +136,51 @@ export default async function DashboardPage() {
 
         {/* Greeting */}
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-800">Hey there! 👋</h1>
-          <p className="text-gray-400 text-sm mt-0.5">{user.email}</p>
+          <h1 className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">Hey there! 👋</h1>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-0.5">{user.email}</p>
         </div>
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 text-center">
             <div className="text-2xl mb-1">⭐</div>
             <div className="text-xl font-extrabold text-violet-600 leading-none">{totalPoints}</div>
-            <div className="text-gray-400 text-xs mt-1">Points</div>
+            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">Points</div>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 text-center">
             <div className="text-2xl mb-1">🔥</div>
             <div className="text-xl font-extrabold text-orange-500 leading-none">{currentStreak}</div>
-            <div className="text-gray-400 text-xs mt-1">Streak</div>
+            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">Streak</div>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 text-center">
             <div className="text-2xl mb-1">✅</div>
             <div className="text-xl font-extrabold text-green-500 leading-none">{completedCount}</div>
-            <div className="text-gray-400 text-xs mt-1">Done</div>
+            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">Done</div>
+          </div>
+
+          {/* Daily goal circle */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 flex flex-col items-center justify-center">
+            <div className="relative w-16 h-16">
+              <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
+                <circle cx="24" cy="24" r={circR} fill="none" strokeWidth="6" className="stroke-gray-200 dark:stroke-gray-700" />
+                <circle
+                  cx="24" cy="24" r={circR}
+                  fill="none"
+                  stroke={circColor}
+                  strokeWidth="6"
+                  strokeDasharray={circC}
+                  strokeDashoffset={circOffset}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-gray-800 dark:text-gray-100">
+                {dailyPercent}%
+              </span>
+            </div>
+            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">daily goal</div>
+            <div className={`text-[10px] font-semibold mt-0.5 ${circTextColor}`}>
+              {dailyPercent >= 65 ? "Streak safe!" : "Keep going!"}
+            </div>
           </div>
         </div>
 
@@ -150,7 +197,7 @@ export default async function DashboardPage() {
             {badge.next ? (
               <div className="text-right">
                 <p className="text-[10px] uppercase tracking-widest text-gray-400">Next up</p>
-                <p className="text-sm font-bold text-gray-600">{badge.next}</p>
+                <p className="text-sm font-bold text-gray-600 dark:text-gray-300">{badge.next}</p>
                 <p className="text-xs text-gray-400">{badge.nextAt! - totalPoints} pts to go</p>
               </div>
             ) : (
@@ -162,7 +209,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Progress bar */}
-          <div className="w-full bg-white rounded-full h-2.5 overflow-hidden">
+          <div className="w-full bg-white/50 dark:bg-black/20 rounded-full h-2.5 overflow-hidden">
             <div
               className={`h-2.5 rounded-full transition-all duration-700 ${badge.bar}`}
               style={{ width: `${progress}%` }}
@@ -172,7 +219,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Streak warning ── */}
-        {streakAtRisk && (
+        {streakAtRisk && !vacationMode && (
           <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4">
             <span className="text-2xl">🔥</span>
             <p className="text-sm font-semibold text-orange-700">
@@ -181,17 +228,30 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* ── Task section ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        {/* ── Vacation mode banner ── */}
+        {vacationMode && (
+          <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4">
+            <span className="text-2xl">🏖️</span>
+            <p className="text-sm font-semibold text-blue-700">
+              Vacation Mode ON — points and streak paused
+            </p>
+          </div>
+        )}
 
-          {/* Header with task count */}
+        {/* ── Task section ── */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+
+          {/* Header with task count + vacation toggle */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-700">My Tasks</h2>
-            {totalCount > 0 && (
-              <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-                {completedCount} / {totalCount} done
-              </span>
-            )}
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">My Tasks</h2>
+            <div className="flex items-center gap-2">
+              {totalCount > 0 && (
+                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                  {completedCount} / {totalCount} done
+                </span>
+              )}
+              <VacationToggle isOn={vacationMode} />
+            </div>
           </div>
 
           {/* Add task form */}
@@ -199,9 +259,9 @@ export default async function DashboardPage() {
 
           {/* Task list or empty state */}
           {totalCount === 0 ? (
-            <div className="text-center text-gray-400 py-10">
+            <div className="text-center text-gray-400 dark:text-gray-500 py-10">
               <div className="text-5xl mb-3">📝</div>
-              <p className="font-semibold text-gray-500">No tasks yet!</p>
+              <p className="font-semibold text-gray-500 dark:text-gray-400">No tasks yet!</p>
               <p className="text-sm mt-1">Add your first task above to get started.</p>
             </div>
           ) : (

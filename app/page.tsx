@@ -53,27 +53,27 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center px-4 py-10">
-      <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
 
         {/* App icon + name */}
         <div className="text-6xl mb-3">✅</div>
         <h1 className="text-4xl font-extrabold text-violet-600 mb-1">TickIt</h1>
-        <p className="text-gray-500 text-lg font-medium mb-2">
+        <p className="text-gray-500 dark:text-gray-300 text-lg font-medium mb-2">
           Check it. Earn it. Level up.
         </p>
-        <p className="text-gray-400 text-sm mb-7">
+        <p className="text-gray-400 dark:text-gray-500 text-sm mb-7">
           The to-do app that actually makes you want to get things done.
         </p>
 
         {/* Feature highlights */}
-        <div className="bg-gray-50 rounded-2xl p-4 mb-8 text-left space-y-3">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-8 text-left space-y-3">
           {[
             ["✅", "Create unlimited tasks"],
             ["⭐", "Earn 10 points per completed task"],
             ["🔥", "Build daily streaks"],
             ["🏆", "Unlock badges: Beginner → Legend"],
           ].map(([icon, text]) => (
-            <div key={text} className="flex items-center gap-3 text-sm text-gray-600">
+            <div key={text} className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
               <span className="text-base">{icon}</span>
               <span>{text}</span>
             </div>
@@ -90,13 +90,13 @@ export default function HomePage() {
           </Link>
           <Link
             href="/login"
-            className="border-2 border-violet-600 text-violet-600 hover:bg-violet-50 active:scale-95 font-bold py-3 rounded-xl transition-all"
+            className="border-2 border-violet-600 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-950/30 active:scale-95 font-bold py-3 rounded-xl transition-all"
           >
             Log In
           </Link>
         </div>
 
-        <p className="text-gray-300 text-xs mt-6">No ads. No spam. Just productivity. 🚀</p>
+        <p className="text-gray-300 dark:text-gray-600 text-xs mt-6">No ads. No spam. Just productivity. 🚀</p>
       </div>
     </main>
   );

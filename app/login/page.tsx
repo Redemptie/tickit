@@ -17,7 +17,6 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Before showing the form, check if a session can be restored from localStorage.
   useEffect(() => {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) {
@@ -46,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
@@ -66,20 +65,18 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center px-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-10 max-w-md w-full">
 
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-2">✅</div>
           <h1 className="text-3xl font-extrabold text-violet-600">Welcome back!</h1>
-          <p className="text-gray-400 mt-1 text-sm">Log in to continue your streak</p>
+          <p className="text-gray-400 dark:text-gray-500 mt-1 text-sm">Log in to continue your streak</p>
         </div>
 
-        {/* Login form */}
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 block">
               Email
             </label>
             <input
@@ -88,12 +85,12 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 block">
               Password
             </label>
             <input
@@ -102,12 +99,12 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm text-center bg-red-50 rounded-xl py-2 px-4">
+            <p className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-950/40 rounded-xl py-2 px-4">
               {error}
             </p>
           )}
@@ -122,7 +119,7 @@ export default function LoginPage() {
 
         </form>
 
-        <p className="text-center text-gray-400 text-sm mt-6">
+        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-6">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-violet-600 font-semibold hover:underline">
             Sign up free

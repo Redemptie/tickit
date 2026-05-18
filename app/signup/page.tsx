@@ -29,24 +29,22 @@ export default function SignupPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      // Show a success message — user may need to confirm their email
       setSuccess(true);
       setLoading(false);
     }
   }
 
-  // If signup worked, show a confirmation message instead of the form
   if (success) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
           <div className="text-6xl mb-4">📬</div>
           <h1 className="text-2xl font-extrabold text-violet-600 mb-2">Check your email!</h1>
-          <p className="text-gray-500 mb-6">
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
             We sent a confirmation link to <strong>{email}</strong>.
             Click the link in the email to activate your account.
           </p>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 dark:text-gray-500 text-sm">
             Already confirmed?{" "}
             <Link href="/login" className="text-violet-600 font-semibold hover:underline">
               Log in here
@@ -59,20 +57,18 @@ export default function SignupPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center px-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-10 max-w-md w-full">
 
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-2">🚀</div>
           <h1 className="text-3xl font-extrabold text-violet-600">Join TickIt!</h1>
-          <p className="text-gray-400 mt-1 text-sm">Create your account and start earning points</p>
+          <p className="text-gray-400 dark:text-gray-500 mt-1 text-sm">Create your account and start earning points</p>
         </div>
 
-        {/* Signup form */}
         <form onSubmit={handleSignup} className="flex flex-col gap-4">
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 block">
               Email
             </label>
             <input
@@ -81,12 +77,12 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 block">
               Password
             </label>
             <input
@@ -96,13 +92,12 @@ export default function SignupPage() {
               required
               minLength={6}
               placeholder="At least 6 characters"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
 
-          {/* Show any error message here */}
           {error && (
-            <p className="text-red-500 text-sm text-center bg-red-50 rounded-xl py-2 px-4">
+            <p className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-950/40 rounded-xl py-2 px-4">
               {error}
             </p>
           )}
@@ -117,8 +112,7 @@ export default function SignupPage() {
 
         </form>
 
-        {/* Link to login */}
-        <p className="text-center text-gray-400 text-sm mt-6">
+        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-6">
           Already have an account?{" "}
           <Link href="/login" className="text-violet-600 font-semibold hover:underline">
             Log in

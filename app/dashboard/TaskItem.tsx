@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { toggleTask, updateTask, deleteTask } from "@/app/tasks/actions";
 
-// Colour for each category pill
 const CATEGORY_COLOURS: Record<string, string> = {
   Work:     "bg-blue-100 text-blue-700",
   School:   "bg-amber-100 text-amber-700",
@@ -25,15 +24,22 @@ export default function TaskItem({ task }: { task: Task }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPoints, setEditPoints] = useState(task.points);
-
-  // One error state covers toggle, edit, and delete errors
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [optimisticCompleted, setOptimisticCompleted] = useState(task.completed);
+  useEffect(() => { setOptimisticCompleted(task.completed); }, [task.completed]);
+
   function handleToggle() {
+    const next = !optimisticCompleted;
+    setOptimisticCompleted(next);
     setError(null);
     startTransition(async () => {
       const result = await toggleTask(task.id, task.completed);
-      if (result.error) setError(result.error);
+      if (result.error) {
+        setOptimisticCompleted(task.completed);
+        setError(result.error);
+      }
     });
   }
 
@@ -43,6 +49,11 @@ export default function TaskItem({ task }: { task: Task }) {
       const result = await deleteTask(task.id);
       if (result.error) setError(result.error);
     });
+  }
+
+  function handleConfirmDelete() {
+    setConfirmingDelete(false);
+    handleDelete();
   }
 
   function handleSaveEdit() {
@@ -68,10 +79,8 @@ export default function TaskItem({ task }: { task: Task }) {
   // ── Edit mode ──
   if (isEditing) {
     return (
-      // li wraps both the input row and any error message
       <li className="flex flex-col gap-1">
-        <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-violet-300 bg-violet-50">
-          {/* Title input */}
+        <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30">
           <input
             type="text"
             value={editTitle}
@@ -81,17 +90,15 @@ export default function TaskItem({ task }: { task: Task }) {
               if (e.key === "Escape") handleCancelEdit();
             }}
             autoFocus
-            className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
-
-          {/* Points input */}
           <input
             type="number"
             value={editPoints}
             onChange={(e) => setEditPoints(Number(e.target.value))}
             min="1"
             max="50"
-            className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-2 text-center text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className="w-16 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 text-center text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
             title="Points (1–50)"
           />
           <button
@@ -103,15 +110,13 @@ export default function TaskItem({ task }: { task: Task }) {
           </button>
           <button
             onClick={handleCancelEdit}
-            className="text-sm font-semibold text-gray-400 hover:text-gray-700 px-3 py-2 rounded-lg transition-colors"
+            className="text-sm font-semibold text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-2 rounded-lg transition-colors"
           >
             Cancel
           </button>
         </div>
-
-        {/* Error shown below the edit row */}
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2">
             ⚠️ {error}
           </p>
         )}
@@ -123,24 +128,24 @@ export default function TaskItem({ task }: { task: Task }) {
   return (
     <li className="flex flex-col gap-1">
       <div
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-          task.completed
-            ? "bg-green-50 border-green-100"
-            : "bg-gray-50 border-gray-100"
-        }`}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+          optimisticCompleted
+            ? "bg-green-50 dark:bg-green-950/30 border-green-100 dark:border-green-900"
+            : "bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700"
+        } ${isPending ? "opacity-50" : "opacity-100"}`}
       >
         {/* Toggle circle */}
         <button
           onClick={handleToggle}
           disabled={isPending}
-          aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+          aria-label={optimisticCompleted ? "Mark incomplete" : "Mark complete"}
           className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all active:scale-90 ${
-            task.completed
+            optimisticCompleted
               ? "bg-green-500 border-green-500"
-              : "border-gray-300 hover:border-violet-400 bg-white"
-          } ${isPending ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+              : "border-gray-300 dark:border-gray-600 hover:border-violet-400 bg-white dark:bg-gray-700"
+          } ${isPending ? "cursor-not-allowed" : "cursor-pointer"}`}
         >
-          {task.completed && (
+          {optimisticCompleted && (
             <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
@@ -150,35 +155,33 @@ export default function TaskItem({ task }: { task: Task }) {
         {/* Task title */}
         <span
           className={`text-sm flex-1 ${
-            task.completed ? "line-through text-gray-400" : "text-gray-700 font-medium"
+            optimisticCompleted
+              ? "line-through text-gray-400 dark:text-gray-500"
+              : "text-gray-700 dark:text-gray-200 font-medium"
           }`}
         >
           {task.title}
         </span>
 
         {/* Category label */}
-        <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            CATEGORY_COLOURS[task.category] ?? CATEGORY_COLOURS.Other
-          }`}
-        >
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLOURS[task.category] ?? CATEGORY_COLOURS.Other}`}>
           {task.category}
         </span>
 
-        {/* Points badge — shows the task's own points value */}
+        {/* Points badge */}
         <span
           className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            task.completed ? "text-green-700 bg-green-100" : "text-violet-600 bg-violet-100"
+            optimisticCompleted ? "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40" : "text-violet-600 bg-violet-100 dark:text-violet-300 dark:bg-violet-900/40"
           }`}
         >
-          {task.completed ? `+${task.points} ✓` : `+${task.points}`}
+          {optimisticCompleted ? `+${task.points} ✓` : `+${task.points}`}
         </span>
 
         {/* Edit */}
         <button
           onClick={() => { setEditTitle(task.title); setEditPoints(task.points); setIsEditing(true); }}
           disabled={isPending}
-          className="text-xs text-gray-300 hover:text-violet-500 px-1.5 py-1 rounded-lg hover:bg-violet-50 transition-colors"
+          className="text-xs text-gray-300 dark:text-gray-600 hover:text-violet-500 dark:hover:text-violet-400 px-1.5 py-1 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors"
           aria-label="Edit task"
         >
           ✏️
@@ -186,18 +189,40 @@ export default function TaskItem({ task }: { task: Task }) {
 
         {/* Delete */}
         <button
-          onClick={handleDelete}
+          onClick={() => setConfirmingDelete(true)}
           disabled={isPending}
-          className="text-xs text-gray-300 hover:text-red-400 px-1.5 py-1 rounded-lg hover:bg-red-50 transition-colors"
+          className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 px-1.5 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
           aria-label="Delete task"
         >
           🗑️
         </button>
       </div>
 
-      {/* Error shown below the task row */}
+      {/* Delete confirmation */}
+      {confirmingDelete && (
+        <div className="flex items-center justify-between bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+          <p className="text-sm font-medium text-red-700 dark:text-red-400">Delete this task?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirmingDelete(false)}
+              className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              disabled={isPending}
+              className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2">
           ⚠️ {error}
         </p>
       )}
