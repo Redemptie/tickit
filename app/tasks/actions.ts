@@ -64,40 +64,36 @@ export async function toggleTask(
 
     const nowCompleted = !currentlyCompleted;
 
-    // Fetch the task's own points value before updating it
-    const { data: taskData } = await supabase
-      .from("tasks")
-      .select("points")
-      .eq("id", taskId)
-      .eq("user_id", user.id)
-      .single();
+    // Fetch task and profile in parallel — need vacation_mode before writing completed_in_vacation
+    const [{ data: taskData }, { data: profile }] = await Promise.all([
+      supabase.from("tasks").select("points, completed_in_vacation").eq("id", taskId).eq("user_id", user.id).single(),
+      supabase.from("profiles").select("total_points, current_streak, last_completed_date, timezone, vacation_mode").eq("id", user.id).single(),
+    ]);
 
     const taskPoints = taskData?.points ?? 10;
+    const wasCompletedInVacation = taskData?.completed_in_vacation ?? false;
+    const vacationMode = profile?.vacation_mode ?? false;
 
     const { error: taskError } = await supabase
       .from("tasks")
       .update({
         completed: nowCompleted,
         completed_at: nowCompleted ? new Date().toISOString() : null,
+        completed_in_vacation: nowCompleted ? vacationMode : false,
       })
       .eq("id", taskId)
       .eq("user_id", user.id);
 
     if (taskError) return { error: "Could not update the task. Please try again." };
 
-    // Fetch profile for points + streak + timezone + vacation mode
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("total_points, current_streak, last_completed_date, timezone, vacation_mode")
-      .eq("id", user.id)
-      .single();
+    // Award points when completing (vacation off); deduct only if points were originally awarded
+    const shouldAdjustPoints = nowCompleted ? !vacationMode : !wasCompletedInVacation;
 
-    const vacationMode   = profile?.vacation_mode ?? false;
-    const currentPoints  = profile?.total_points ?? 0;
-    const pointsChange   = nowCompleted ? taskPoints : -taskPoints;
-    const newPoints      = Math.max(0, currentPoints + pointsChange);
+    if (shouldAdjustPoints) {
+      const currentPoints = profile?.total_points ?? 0;
+      const pointsChange = nowCompleted ? taskPoints : -taskPoints;
+      const newPoints = Math.max(0, currentPoints + pointsChange);
 
-    if (!vacationMode) {
       if (nowCompleted) {
         const tz = profile?.timezone ?? "UTC";
         const toLocal = (d: Date) =>
@@ -142,7 +138,6 @@ export async function toggleTask(
           .eq("id", user.id);
       }
     }
-    // vacation mode on: task state changes but profile (points/streak) untouched
 
     revalidatePath("/dashboard");
     return { error: null };
@@ -176,7 +171,7 @@ export async function updateTask(
     // Read the current task so we know the old points and whether it's completed
     const { data: currentTask } = await supabase
       .from("tasks")
-      .select("completed, points")
+      .select("completed, points, completed_in_vacation")
       .eq("id", taskId)
       .eq("user_id", user.id)
       .single();
@@ -189,8 +184,8 @@ export async function updateTask(
 
     if (error) return { error: "Could not update the task. Please try again." };
 
-    // If the task was already completed, adjust the profile total by the difference
-    if (currentTask?.completed) {
+    // If the task was completed and points were awarded, adjust the profile total by the difference
+    if (currentTask?.completed && !currentTask?.completed_in_vacation) {
       const oldPoints = currentTask.points ?? 10;
       const diff = clampedPoints - oldPoints;
 
@@ -254,7 +249,7 @@ export async function deleteTask(
     // Read completed + points so we know how much to subtract if needed
     const { data: task } = await supabase
       .from("tasks")
-      .select("completed, points")
+      .select("completed, points, completed_in_vacation")
       .eq("id", taskId)
       .eq("user_id", user.id)
       .single();
@@ -267,8 +262,8 @@ export async function deleteTask(
 
     if (error) return { error: "Could not delete the task. Please try again." };
 
-    // Subtract points if the deleted task was completed
-    if (task?.completed) {
+    // Subtract points only if the task was completed and points were originally awarded
+    if (task?.completed && !task?.completed_in_vacation) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("total_points")
