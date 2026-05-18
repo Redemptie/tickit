@@ -18,7 +18,12 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { timezone: tz } },
+    });
 
     if (error) {
       setError(error.message);

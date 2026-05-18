@@ -31,6 +31,15 @@ export async function GET(request: NextRequest) {
 
     // Swap the one-time code for a real session
     await supabase.auth.exchangeCodeForSession(code);
+
+    // On first confirmation the user's detected timezone is stored in metadata.
+    // Save it to the profile once here — this route only runs on email confirmation,
+    // never on regular logins, so it won't overwrite later manual changes.
+    const { data: { user } } = await supabase.auth.getUser();
+    const tz = user?.user_metadata?.timezone;
+    if (user && tz) {
+      await supabase.from("profiles").update({ timezone: tz }).eq("id", user.id);
+    }
   }
 
   // Send the user to the dashboard after confirming their email

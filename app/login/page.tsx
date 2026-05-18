@@ -52,9 +52,6 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      // Save the browser's timezone to the user's profile
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      await supabase.from("profiles").update({ timezone: tz }).eq("id", data.user.id);
       router.push("/dashboard");
     }
   }
