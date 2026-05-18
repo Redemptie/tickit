@@ -7,6 +7,7 @@ type Task = {
   id: string;
   title: string;
   completed: boolean;
+  points: number;
 };
 
 export default function TaskItem({ task }: { task: Task }) {
@@ -131,13 +132,13 @@ export default function TaskItem({ task }: { task: Task }) {
           {task.title}
         </span>
 
-        {/* Points badge */}
+        {/* Points badge — shows the task's own points value */}
         <span
           className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
             task.completed ? "text-green-700 bg-green-100" : "text-violet-600 bg-violet-100"
           }`}
         >
-          {task.completed ? "+10 ✓" : "+10"}
+          {task.completed ? `+${task.points} ✓` : `+${task.points}`}
         </span>
 
         {/* Edit */}

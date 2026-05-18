@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   // Fetch tasks — incomplete first, then complete; within each group newest first
   const { data: tasks } = await supabase
     .from("tasks")
-    .select("id, title, completed, created_at")
+    .select("id, title, completed, points, created_at")
     .eq("user_id", user.id)
     .order("completed",   { ascending: true  })
     .order("created_at",  { ascending: false });

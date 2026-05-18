@@ -23,9 +23,14 @@ export async function createTask(
     const title = formData.get("title") as string;
     if (!title?.trim()) return { error: "Task title cannot be empty." };
 
+    // Read the chosen points value from the form (default to 10 if missing)
+    const rawPoints = parseInt(formData.get("points") as string, 10);
+    const points = [5, 10, 20, 50].includes(rawPoints) ? rawPoints : 10;
+
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
       title: title.trim(),
+      points,
     });
 
     if (error) return { error: "Could not save the task. Please try again." };
@@ -53,6 +58,16 @@ export async function toggleTask(
 
     const nowCompleted = !currentlyCompleted;
 
+    // Fetch the task's own points value before updating it
+    const { data: taskData } = await supabase
+      .from("tasks")
+      .select("points")
+      .eq("id", taskId)
+      .eq("user_id", user.id)
+      .single();
+
+    const taskPoints = taskData?.points ?? 10;
+
     const { error: taskError } = await supabase
       .from("tasks")
       .update({
@@ -72,7 +87,8 @@ export async function toggleTask(
       .single();
 
     const currentPoints = profile?.total_points ?? 0;
-    const pointsChange = nowCompleted ? 10 : -10;
+    // Use the task's real points value, not a hardcoded 10
+    const pointsChange = nowCompleted ? taskPoints : -taskPoints;
     const newPoints = Math.max(0, currentPoints + pointsChange);
 
     if (nowCompleted) {
@@ -161,10 +177,10 @@ export async function deleteTask(
     } = await supabase.auth.getUser();
     if (!user) return { error: "You must be logged in." };
 
-    // Check if task was completed so we can subtract points
+    // Read completed + points so we know how much to subtract if needed
     const { data: task } = await supabase
       .from("tasks")
-      .select("completed")
+      .select("completed, points")
       .eq("id", taskId)
       .eq("user_id", user.id)
       .single();
@@ -185,7 +201,8 @@ export async function deleteTask(
         .eq("id", user.id)
         .single();
 
-      const newPoints = Math.max(0, (profile?.total_points ?? 0) - 10);
+      const taskPoints = task?.points ?? 10;
+    const newPoints = Math.max(0, (profile?.total_points ?? 0) - taskPoints);
       await supabase
         .from("profiles")
         .update({ total_points: newPoints })
