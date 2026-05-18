@@ -16,6 +16,9 @@ export default function TaskForm() {
   const [customValue, setCustomValue] = useState("");
   const [customError, setCustomError] = useState<string | null>(null);
 
+  // Category state
+  const [selectedCategory, setSelectedCategory] = useState("Other");
+
   const isCustomActive = selectedPreset === null;
   const customNum = parseInt(customValue, 10);
   const isCustomValid = customValue !== "" && !isNaN(customNum) && customNum >= 1 && customNum <= 50;
@@ -52,6 +55,7 @@ export default function TaskForm() {
         setSelectedPreset(10);
         setCustomValue("");
         setCustomError(null);
+        setSelectedCategory("Other");
       }
     });
   }
@@ -100,8 +104,8 @@ export default function TaskForm() {
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xs text-gray-400 font-medium">Category:</span>
         <select
-          name="category"
-          defaultValue="Other"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
           className="border border-gray-200 rounded-lg px-3 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
         >
           {CATEGORIES.map((cat) => (
@@ -113,6 +117,7 @@ export default function TaskForm() {
       {/* ── Task input row ── */}
       <form ref={formRef} action={handleSubmit} className="flex gap-2">
         <input type="hidden" name="points" value={effectivePoints} />
+        <input type="hidden" name="category" value={selectedCategory} />
 
         <input
           name="title"
