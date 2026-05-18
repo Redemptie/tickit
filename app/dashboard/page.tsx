@@ -51,6 +51,15 @@ export default async function DashboardPage() {
   const completedCount = tasks?.filter((t) => t.completed).length ?? 0;
   const totalCount     = tasks?.length ?? 0;
 
+  const yesterdayStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split("T")[0];
+  })();
+  const streakAtRisk =
+    currentStreak > 0 &&
+    profile?.last_completed_date === yesterdayStr;
+
   const badge    = getBadge(totalPoints);
   const progress = getBadgeProgress(totalPoints);
 
@@ -139,6 +148,16 @@ export default async function DashboardPage() {
           </div>
           <p className="text-[10px] text-gray-400 mt-1 text-right">{progress}% to next level</p>
         </div>
+
+        {/* ── Streak warning ── */}
+        {streakAtRisk && (
+          <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4">
+            <span className="text-2xl">🔥</span>
+            <p className="text-sm font-semibold text-orange-700">
+              Your {currentStreak}-day streak resets tonight — complete a task to keep it alive!
+            </p>
+          </div>
+        )}
 
         {/* ── Task section ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
