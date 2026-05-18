@@ -116,7 +116,7 @@ export default function TaskForm() {
 
       {/* ── Task input row ── */}
       <form ref={formRef} action={handleSubmit} className="flex gap-2">
-        <input type="hidden" name="points" value={effectivePoints} />
+        <input type="hidden" name="points" value={effectivePoints ?? 10} />
         <input type="hidden" name="category" value={selectedCategory} />
 
         <input
