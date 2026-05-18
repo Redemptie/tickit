@@ -14,6 +14,7 @@ export default function TaskItem({ task }: { task: Task }) {
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
+  const [editPoints, setEditPoints] = useState(task.points);
 
   // One error state covers toggle, edit, and delete errors
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export default function TaskItem({ task }: { task: Task }) {
     if (!editTitle.trim()) return;
     setError(null);
     startTransition(async () => {
-      const result = await updateTask(task.id, editTitle);
+      const result = await updateTask(task.id, editTitle, editPoints);
       if (result.error) {
         setError(result.error);
       } else {
@@ -49,6 +50,7 @@ export default function TaskItem({ task }: { task: Task }) {
 
   function handleCancelEdit() {
     setEditTitle(task.title);
+    setEditPoints(task.points);
     setIsEditing(false);
     setError(null);
   }
@@ -59,6 +61,7 @@ export default function TaskItem({ task }: { task: Task }) {
       // li wraps both the input row and any error message
       <li className="flex flex-col gap-1">
         <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-violet-300 bg-violet-50">
+          {/* Title input */}
           <input
             type="text"
             value={editTitle}
@@ -69,6 +72,17 @@ export default function TaskItem({ task }: { task: Task }) {
             }}
             autoFocus
             className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+          />
+
+          {/* Points input */}
+          <input
+            type="number"
+            value={editPoints}
+            onChange={(e) => setEditPoints(Number(e.target.value))}
+            min="1"
+            max="50"
+            className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-2 text-center text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            title="Points (1–50)"
           />
           <button
             onClick={handleSaveEdit}
@@ -143,7 +157,7 @@ export default function TaskItem({ task }: { task: Task }) {
 
         {/* Edit */}
         <button
-          onClick={() => { setEditTitle(task.title); setIsEditing(true); }}
+          onClick={() => { setEditTitle(task.title); setEditPoints(task.points); setIsEditing(true); }}
           disabled={isPending}
           className="text-xs text-gray-300 hover:text-violet-500 px-1.5 py-1 rounded-lg hover:bg-violet-50 transition-colors"
           aria-label="Edit task"

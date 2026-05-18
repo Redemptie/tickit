@@ -23,9 +23,11 @@ export async function createTask(
     const title = formData.get("title") as string;
     if (!title?.trim()) return { error: "Task title cannot be empty." };
 
-    // Read the chosen points value from the form (default to 10 if missing)
+    // Read the chosen points value; clamp to 1–50, default to 10 if invalid
     const rawPoints = parseInt(formData.get("points") as string, 10);
-    const points = [5, 10, 20, 50].includes(rawPoints) ? rawPoints : 10;
+    const points = !isNaN(rawPoints) && rawPoints >= 1 && rawPoints <= 50
+      ? rawPoints
+      : 10;
 
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
@@ -137,7 +139,8 @@ export async function toggleTask(
 
 export async function updateTask(
   taskId: string,
-  newTitle: string
+  newTitle: string,
+  newPoints: number
 ): Promise<{ error: string | null }> {
   try {
     const supabase = await createClient();
@@ -149,13 +152,46 @@ export async function updateTask(
 
     if (!newTitle?.trim()) return { error: "Task title cannot be empty." };
 
+    // Clamp points to valid range
+    const clampedPoints = !isNaN(newPoints) && newPoints >= 1 && newPoints <= 50
+      ? Math.round(newPoints)
+      : 10;
+
+    // Read the current task so we know the old points and whether it's completed
+    const { data: currentTask } = await supabase
+      .from("tasks")
+      .select("completed, points")
+      .eq("id", taskId)
+      .eq("user_id", user.id)
+      .single();
+
     const { error } = await supabase
       .from("tasks")
-      .update({ title: newTitle.trim() })
+      .update({ title: newTitle.trim(), points: clampedPoints })
       .eq("id", taskId)
       .eq("user_id", user.id);
 
     if (error) return { error: "Could not update the task. Please try again." };
+
+    // If the task was already completed, adjust the profile total by the difference
+    if (currentTask?.completed) {
+      const oldPoints = currentTask.points ?? 10;
+      const diff = clampedPoints - oldPoints;
+
+      if (diff !== 0) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("total_points")
+          .eq("id", user.id)
+          .single();
+
+        const newTotal = Math.max(0, (profile?.total_points ?? 0) + diff);
+        await supabase
+          .from("profiles")
+          .update({ total_points: newTotal })
+          .eq("id", user.id);
+      }
+    }
 
     revalidatePath("/dashboard");
     return { error: null };
