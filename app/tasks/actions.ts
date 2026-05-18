@@ -285,6 +285,30 @@ export async function deleteTask(
   }
 }
 
+// ─── Display name ────────────────────────────────────────────────────────────
+
+export async function updateDisplayName(
+  name: string
+): Promise<{ error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "You must be logged in." };
+
+    const sanitized = name.trim().slice(0, 30) || null;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: sanitized })
+      .eq("id", user.id);
+
+    if (error) return { error: "Could not update display name." };
+    revalidatePath("/dashboard");
+    return { error: null };
+  } catch {
+    return { error: "Something went wrong." };
+  }
+}
+
 // ─── Vacation mode ────────────────────────────────────────────────────────────
 
 export async function setVacationMode(

@@ -89,7 +89,7 @@ export default function TaskForm() {
               ? "border-red-300 focus:ring-red-300"
               : isCustomActive
               ? "border-violet-400 ring-1 ring-violet-400"
-              : "border-gray-200 dark:border-gray-600 focus:ring-violet-400"
+              : "border-gray-300 dark:border-gray-600 focus:ring-violet-400"
           }`}
         />
       </div>
@@ -103,7 +103,7 @@ export default function TaskForm() {
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1 text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+          className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1 text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
         >
           {CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>{cat}</option>
@@ -122,7 +122,7 @@ export default function TaskForm() {
           required
           placeholder="Add a new task..."
           className={`flex-1 bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 text-sm transition-colors ${
-            error ? "border-red-300 focus:ring-red-300" : "border-gray-200 dark:border-gray-600 focus:ring-violet-400"
+            error ? "border-red-300 focus:ring-red-300" : "border-gray-300 dark:border-gray-600 focus:ring-violet-400"
           }`}
         />
         <button

@@ -90,7 +90,7 @@ export default function TaskItem({ task }: { task: Task }) {
               if (e.key === "Escape") handleCancelEdit();
             }}
             autoFocus
-            className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
           <input
             type="number"
@@ -98,7 +98,7 @@ export default function TaskItem({ task }: { task: Task }) {
             onChange={(e) => setEditPoints(Number(e.target.value))}
             min="1"
             max="50"
-            className="w-16 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 text-center text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            className="w-16 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 text-center text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
             title="Points (1–50)"
           />
           <button
@@ -128,25 +128,29 @@ export default function TaskItem({ task }: { task: Task }) {
   return (
     <li className="flex flex-col gap-1">
       <div
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+        className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all ${
           optimisticCompleted
             ? "bg-green-50 dark:bg-green-950/30 border-green-100 dark:border-green-900"
-            : "bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700"
-        } ${isPending ? "opacity-50" : "opacity-100"}`}
+            : "bg-gray-50 dark:bg-gray-800/60 border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-sm hover:-translate-y-px"
+        } ${isPending ? "opacity-50" : optimisticCompleted ? "opacity-75" : "opacity-100"}`}
       >
         {/* Toggle circle */}
         <button
           onClick={handleToggle}
           disabled={isPending}
           aria-label={optimisticCompleted ? "Mark incomplete" : "Mark complete"}
-          className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all active:scale-90 ${
+          className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all active:scale-90 ${
             optimisticCompleted
               ? "bg-green-500 border-green-500"
               : "border-gray-300 dark:border-gray-600 hover:border-violet-400 bg-white dark:bg-gray-700"
           } ${isPending ? "cursor-not-allowed" : "cursor-pointer"}`}
         >
           {optimisticCompleted && (
-            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
+              style={{ animation: "tickit-pop 0.25s ease" }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           )}
@@ -154,7 +158,7 @@ export default function TaskItem({ task }: { task: Task }) {
 
         {/* Task title */}
         <span
-          className={`text-sm flex-1 ${
+          className={`text-sm flex-1 min-w-0 truncate ${
             optimisticCompleted
               ? "line-through text-gray-400 dark:text-gray-500"
               : "text-gray-700 dark:text-gray-200 font-medium"
@@ -164,13 +168,13 @@ export default function TaskItem({ task }: { task: Task }) {
         </span>
 
         {/* Category label */}
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLOURS[task.category] ?? CATEGORY_COLOURS.Other}`}>
+        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${CATEGORY_COLOURS[task.category] ?? CATEGORY_COLOURS.Other}`}>
           {task.category}
         </span>
 
         {/* Points badge */}
         <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+          className={`text-xs font-semibold px-2 py-1 rounded-full ${
             optimisticCompleted ? "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40" : "text-violet-600 bg-violet-100 dark:text-violet-300 dark:bg-violet-900/40"
           }`}
         >
@@ -181,20 +185,24 @@ export default function TaskItem({ task }: { task: Task }) {
         <button
           onClick={() => { setEditTitle(task.title); setEditPoints(task.points); setIsEditing(true); }}
           disabled={isPending}
-          className="text-xs text-gray-300 dark:text-gray-600 hover:text-violet-500 dark:hover:text-violet-400 px-1.5 py-1 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors"
+          className="p-2 rounded-lg flex-shrink-0 text-gray-300 dark:text-gray-600 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors"
           aria-label="Edit task"
         >
-          ✏️
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
         </button>
 
         {/* Delete */}
         <button
           onClick={() => setConfirmingDelete(true)}
           disabled={isPending}
-          className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 px-1.5 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+          className="p-2 rounded-lg flex-shrink-0 text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
           aria-label="Delete task"
         >
-          🗑️
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
         </button>
       </div>
 
@@ -205,7 +213,7 @@ export default function TaskItem({ task }: { task: Task }) {
           <div className="flex gap-2">
             <button
               onClick={() => setConfirmingDelete(false)}
-              className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 transition-colors"
+              className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 transition-colors"
             >
               Cancel
             </button>

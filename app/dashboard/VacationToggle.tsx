@@ -24,7 +24,7 @@ export default function VacationToggle({ isOn }: { isOn: boolean }) {
       }`}
     >
       <span>🏖️</span>
-      <span>Vacation Mode</span>
+      <span className="hidden sm:inline">Vacation Mode</span>
       {/* pill toggle */}
       <div className={`w-9 h-5 rounded-full relative transition-colors ${isOn ? "bg-blue-500" : "bg-gray-300"}`}>
         <div

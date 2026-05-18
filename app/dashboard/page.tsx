@@ -4,13 +4,12 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
-import { logout } from "@/app/auth/actions";
 import TaskForm from "@/app/dashboard/TaskForm";
 import TaskItem from "@/app/dashboard/TaskItem";
-import TimezoneBar from "@/app/dashboard/TimezoneBar";
+import NavMenu from "@/app/dashboard/NavMenu";
 import VacationToggle from "@/app/dashboard/VacationToggle";
+import GreetingEditor from "@/app/dashboard/GreetingEditor";
 import ClientAuthRedirect from "@/app/dashboard/ClientAuthRedirect";
-import ThemeToggle from "@/components/ThemeToggle";
 
 // --- Badge helpers ---
 
@@ -39,7 +38,7 @@ export default async function DashboardPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date, vacation_mode")
+    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date, vacation_mode, display_name")
     .eq("id", user.id)
     .single();
 
@@ -100,7 +99,8 @@ export default async function DashboardPage() {
     currentStreak > 0 &&
     profile?.last_completed_date === localDate(lastGraceDay);
 
-  const vacationMode = profile?.vacation_mode ?? false;
+  const vacationMode   = profile?.vacation_mode ?? false;
+  const greetingName   = profile?.display_name?.trim() || user.email?.split("@")[0] || "there";
 
   const badge    = getBadge(totalPoints);
   const progress = getBadgeProgress(totalPoints);
@@ -109,53 +109,41 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
 
       {/* ── Nav bar ── */}
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">✅</span>
-          <span className="text-xl font-extrabold text-violet-600">TickIt</span>
+      <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow-sm">
+            <span className="text-base leading-none">✅</span>
+          </div>
+          <span className="text-lg font-extrabold text-violet-600">TickIt</span>
         </div>
-        <div className="flex items-center gap-3">
-          <TimezoneBar initialTimezone={tz} />
-          <span className="text-gray-400 dark:text-gray-500 text-sm hidden sm:block truncate max-w-[160px]">
-            {user.email}
-          </span>
-          <ThemeToggle />
-          <form action={logout}>
-            <button
-              type="submit"
-              className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 active:scale-95 text-gray-600 dark:text-gray-300 text-sm font-semibold px-4 py-2 rounded-xl transition-all"
-            >
-              Log Out
-            </button>
-          </form>
-        </div>
+        <NavMenu email={user.email!} timezone={tz} />
       </nav>
 
       {/* ── Page content ── */}
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-6">
 
         {/* Greeting */}
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-800 dark:text-gray-100">Hey there! 👋</h1>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-0.5">{user.email}</p>
+          <GreetingEditor name={greetingName} />
+          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">{user.email}</p>
         </div>
 
         {/* ── Stat cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 text-center">
-            <div className="text-2xl mb-1">⭐</div>
-            <div className="text-xl font-extrabold text-violet-600 leading-none">{totalPoints}</div>
-            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">Points</div>
+          <div className="bg-violet-50 dark:bg-violet-950/20 rounded-2xl shadow-sm border border-violet-100 dark:border-violet-900/40 p-4 text-center">
+            <div className="text-3xl mb-1.5">⭐</div>
+            <div className="text-2xl font-extrabold text-violet-600 leading-none">{totalPoints}</div>
+            <div className="text-violet-400 dark:text-violet-500 text-xs mt-1.5 font-medium">Points</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 text-center">
-            <div className="text-2xl mb-1">🔥</div>
-            <div className="text-xl font-extrabold text-orange-500 leading-none">{currentStreak}</div>
-            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">Streak</div>
+          <div className="bg-orange-50 dark:bg-orange-950/20 rounded-2xl shadow-sm border border-orange-100 dark:border-orange-900/40 p-4 text-center">
+            <div className="text-3xl mb-1.5">🔥</div>
+            <div className="text-2xl font-extrabold text-orange-500 leading-none">{currentStreak}</div>
+            <div className="text-orange-400 dark:text-orange-500 text-xs mt-1.5 font-medium">Streak</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 text-center">
-            <div className="text-2xl mb-1">✅</div>
-            <div className="text-xl font-extrabold text-green-500 leading-none">{completedCount}</div>
-            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">Done</div>
+          <div className="bg-green-50 dark:bg-green-950/20 rounded-2xl shadow-sm border border-green-100 dark:border-green-900/40 p-4 text-center">
+            <div className="text-3xl mb-1.5">✅</div>
+            <div className="text-2xl font-extrabold text-green-500 leading-none">{completedCount}</div>
+            <div className="text-green-500 dark:text-green-600 text-xs mt-1.5 font-medium">Done</div>
           </div>
 
           {/* Daily goal circle */}
@@ -171,13 +159,14 @@ export default async function DashboardPage() {
                   strokeDasharray={circC}
                   strokeDashoffset={circOffset}
                   strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 0.7s ease, stroke 0.4s ease" }}
                 />
               </svg>
               <span className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-gray-800 dark:text-gray-100">
                 {dailyPercent}%
               </span>
             </div>
-            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1">daily goal</div>
+            <div className="text-gray-400 dark:text-gray-500 text-xs mt-1.5 font-medium">Daily goal</div>
             <div className={`text-[10px] font-semibold mt-0.5 ${circTextColor}`}>
               {dailyPercent >= 65 ? "Streak safe!" : "Keep going!"}
             </div>
@@ -185,8 +174,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Badge card ── */}
-        <div className={`${badge.bg} border ${badge.border} rounded-2xl p-5`}>
-          <div className="flex items-center justify-between mb-3">
+        <div className={`${badge.bg} dark:bg-gray-900 border ${badge.border} dark:border-gray-800 rounded-2xl shadow-sm p-5`}>
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
             <div className="flex items-center gap-3">
               <span className="text-3xl">{badge.emoji}</span>
               <div>
@@ -209,20 +198,25 @@ export default async function DashboardPage() {
           </div>
 
           {/* Progress bar */}
-          <div className="w-full bg-white/50 dark:bg-black/20 rounded-full h-2.5 overflow-hidden">
+          <div className="w-full bg-white/60 dark:bg-black/20 rounded-full h-3 overflow-hidden">
             <div
-              className={`h-2.5 rounded-full transition-all duration-700 ${badge.bar}`}
-              style={{ width: `${progress}%` }}
+              className={`h-3 rounded-full transition-all duration-700 ${badge.bar}`}
+              style={{ width: progress > 0 ? `max(${progress}%, 8px)` : "0%" }}
             />
           </div>
-          <p className="text-[10px] text-gray-400 mt-1 text-right">{progress}% to next level</p>
+          <div className="flex items-center justify-between mt-1.5">
+            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+              {badge.next ? `${badge.nextAt! - totalPoints} pts to ${badge.next}` : "Max level reached!"}
+            </p>
+            <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">{progress}%</p>
+          </div>
         </div>
 
         {/* ── Streak warning ── */}
         {streakAtRisk && !vacationMode && (
-          <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4">
+          <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-2xl px-5 py-4">
             <span className="text-2xl">🔥</span>
-            <p className="text-sm font-semibold text-orange-700">
+            <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
               Your {currentStreak}-day streak resets tonight — complete a task to keep it alive!
             </p>
           </div>
@@ -230,9 +224,9 @@ export default async function DashboardPage() {
 
         {/* ── Vacation mode banner ── */}
         {vacationMode && (
-          <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4">
+          <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-2xl px-5 py-4">
             <span className="text-2xl">🏖️</span>
-            <p className="text-sm font-semibold text-blue-700">
+            <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">
               Vacation Mode ON — points and streak paused
             </p>
           </div>
@@ -259,10 +253,12 @@ export default async function DashboardPage() {
 
           {/* Task list or empty state */}
           {totalCount === 0 ? (
-            <div className="text-center text-gray-400 dark:text-gray-500 py-10">
-              <div className="text-5xl mb-3">📝</div>
-              <p className="font-semibold text-gray-500 dark:text-gray-400">No tasks yet!</p>
-              <p className="text-sm mt-1">Add your first task above to get started.</p>
+            <div className="text-center py-12">
+              <div className="text-5xl mb-4">📋</div>
+              <p className="font-bold text-gray-600 dark:text-gray-300">No tasks yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1.5">
+                Add your first one above to start earning points!
+              </p>
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
