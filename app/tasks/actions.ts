@@ -139,7 +139,28 @@ export async function toggleTask(
       }
     }
 
+    // ── Save daily snapshot to history ──
+    const tz      = profile?.timezone ?? "UTC";
+    const todayDt = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+
+    const { data: allTasks } = await supabase
+      .from("tasks")
+      .select("points, completed")
+      .eq("user_id", user.id);
+
+    const ptsEarned = allTasks?.filter(t => t.completed).reduce((s, t) => s + t.points, 0) ?? 0;
+    const tasksDone = allTasks?.filter(t => t.completed).length ?? 0;
+    const ptsTotal  = allTasks?.reduce((s, t) => s + t.points, 0) ?? 0;
+    const pct       = ptsTotal > 0 ? Math.round((ptsEarned / ptsTotal) * 100) : 0;
+
+    await supabase.from("daily_history").upsert(
+      { user_id: user.id, date: todayDt, points_earned: ptsEarned,
+        tasks_completed: tasksDone, total_possible_points: ptsTotal, percentage: pct },
+      { onConflict: "user_id,date" }
+    );
+
     revalidatePath("/dashboard");
+    revalidatePath("/progress");
     return { error: null };
   } catch {
     return { error: "Something went wrong. Please try again." };

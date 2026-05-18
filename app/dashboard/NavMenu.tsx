@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import TimezoneBar from "@/app/dashboard/TimezoneBar";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -22,6 +23,12 @@ export default function NavMenu({ email, timezone }: { email: string; timezone: 
     <>
       {/* ── Desktop (sm+): full inline bar ── */}
       <div className="hidden sm:flex items-center gap-3">
+        <Link
+          href="/progress"
+          className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors px-2 py-1"
+        >
+          📊 Progress
+        </Link>
         <TimezoneBar initialTimezone={timezone} />
         <span className="text-sm text-gray-400 dark:text-gray-500 truncate max-w-[160px]">{email}</span>
         <ThemeToggle />
@@ -56,6 +63,18 @@ export default function NavMenu({ email, timezone }: { email: string; timezone: 
 
         {open && (
           <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-lg overflow-hidden z-50">
+
+            {/* Progress link */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <Link
+                href="/progress"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+              >
+                <span>📊</span>
+                <span>Weekly Progress</span>
+              </Link>
+            </div>
 
             {/* Email */}
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
