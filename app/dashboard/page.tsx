@@ -4,11 +4,11 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { logout } from "@/app/auth/actions";
 import TaskForm from "@/app/dashboard/TaskForm";
 import TaskItem from "@/app/dashboard/TaskItem";
 import TimezoneBar from "@/app/dashboard/TimezoneBar";
+import ClientAuthRedirect from "@/app/dashboard/ClientAuthRedirect";
 
 // --- Badge helpers ---
 
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) return <ClientAuthRedirect />;
 
   // Fetch profile
   const { data: profile } = await supabase

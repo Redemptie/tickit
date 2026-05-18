@@ -1,14 +1,14 @@
 "use client";
 
-// "use client" means this component runs in the browser.
-// We need this because it uses useState and responds to user input.
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
+const SESSION_KEY = "supabase_session_backup";
+
 export default function LoginPage() {
+  const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,8 +17,32 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  // Before showing the form, check if a session can be restored from localStorage.
+  useEffect(() => {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) {
+      setChecking(false);
+      return;
+    }
+    const client = createClient();
+    try {
+      const { access_token, refresh_token } = JSON.parse(raw);
+      client.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+        if (!error) {
+          router.replace("/dashboard");
+        } else {
+          localStorage.removeItem(SESSION_KEY);
+          setChecking(false);
+        }
+      });
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+      setChecking(false);
+    }
+  }, [router]);
+
   async function handleLogin(e: React.FormEvent) {
-    e.preventDefault(); // stop page from refreshing on form submit
+    e.preventDefault();
     setLoading(true);
     setError("");
 
@@ -33,6 +57,14 @@ export default function LoginPage() {
       await supabase.from("profiles").update({ timezone: tz }).eq("id", data.user.id);
       router.push("/dashboard");
     }
+  }
+
+  if (checking) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+      </main>
+    );
   }
 
   return (
@@ -77,7 +109,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Show any error message here */}
           {error && (
             <p className="text-red-500 text-sm text-center bg-red-50 rounded-xl py-2 px-4">
               {error}
@@ -94,7 +125,6 @@ export default function LoginPage() {
 
         </form>
 
-        {/* Link to signup */}
         <p className="text-center text-gray-400 text-sm mt-6">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-violet-600 font-semibold hover:underline">

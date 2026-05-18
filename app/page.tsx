@@ -1,6 +1,56 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+
+const SESSION_KEY = "supabase_session_backup";
 
 export default function HomePage() {
+  const [ready, setReady] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // If no backup at all, show landing immediately — no need to wait
+    const hasBackup = Boolean(localStorage.getItem(SESSION_KEY));
+    if (!hasBackup) {
+      setReady(true);
+      return;
+    }
+
+    // A backup exists. AuthProvider (parent) will call setSession() and fire SIGNED_IN.
+    // Listen for that event instead of calling setSession() ourselves — avoids a
+    // race condition where both callers use the same refresh token and one gets
+    // rejected after token rotation.
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        router.replace("/dashboard");
+      }
+    });
+
+    // Fallback: if SIGNED_IN never fires (e.g. expired token), clear the bad
+    // backup and show the landing page after 1.5 s
+    const timeout = setTimeout(() => {
+      localStorage.removeItem(SESSION_KEY);
+      setReady(true);
+    }, 1500);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [router]);
+
+  if (!ready) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center px-4 py-10">
       <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
