@@ -13,3 +13,14 @@ body {
   65%  { transform: scale(1.3); }
   100% { transform: scale(1);   opacity: 1; }
 }
+
+@keyframes badge-pop {
+  0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  70%  { transform: scale(1.1) rotate(3deg);   opacity: 1; }
+  100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+}
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(0)     rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(-280px) rotate(720deg); opacity: 0; }
+}

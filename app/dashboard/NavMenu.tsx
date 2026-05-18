@@ -29,6 +29,12 @@ export default function NavMenu({ email, timezone }: { email: string; timezone: 
         >
           📊 Progress
         </Link>
+        <Link
+          href="/friends"
+          className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors px-2 py-1"
+        >
+          👥 Friends
+        </Link>
         <TimezoneBar initialTimezone={timezone} />
         <span className="text-sm text-gray-400 dark:text-gray-500 truncate max-w-[160px]">{email}</span>
         <ThemeToggle />
@@ -73,6 +79,18 @@ export default function NavMenu({ email, timezone }: { email: string; timezone: 
               >
                 <span>📊</span>
                 <span>Weekly Progress</span>
+              </Link>
+            </div>
+
+            {/* Friends link */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <Link
+                href="/friends"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+              >
+                <span>👥</span>
+                <span>Friends</span>
               </Link>
             </div>
 

@@ -9,7 +9,9 @@ import TaskItem from "@/app/dashboard/TaskItem";
 import NavMenu from "@/app/dashboard/NavMenu";
 import VacationToggle from "@/app/dashboard/VacationToggle";
 import GreetingEditor from "@/app/dashboard/GreetingEditor";
+import UsernameSetup from "@/app/dashboard/UsernameSetup";
 import ClientAuthRedirect from "@/app/dashboard/ClientAuthRedirect";
+import BadgeCelebration from "@/app/dashboard/BadgeCelebration";
 
 // --- Badge helpers ---
 
@@ -38,7 +40,7 @@ export default async function DashboardPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date, vacation_mode, display_name")
+    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date, vacation_mode, display_name, username")
     .eq("id", user.id)
     .single();
 
@@ -107,6 +109,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <BadgeCelebration currentTier={badge.label} />
 
       {/* ── Nav bar ── */}
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10">
@@ -127,6 +130,9 @@ export default async function DashboardPage() {
           <GreetingEditor name={greetingName} />
           <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">{user.email}</p>
         </div>
+
+        {/* Username setup prompt — shown until user sets one */}
+        {!profile?.username && <UsernameSetup />}
 
         {/* ── Stat cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

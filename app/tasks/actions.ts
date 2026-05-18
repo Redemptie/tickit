@@ -306,6 +306,40 @@ export async function deleteTask(
   }
 }
 
+// ─── Username ────────────────────────────────────────────────────────────────
+
+export async function setUsername(
+  username: string
+): Promise<{ error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "You must be logged in." };
+
+    const trimmed = username.trim().toLowerCase();
+
+    if (!/^[a-zA-Z0-9_]+$/.test(trimmed))
+      return { error: "Only letters, numbers, and underscores are allowed." };
+    if (trimmed.length < 3)  return { error: "Username must be at least 3 characters." };
+    if (trimmed.length > 20) return { error: "Username must be 20 characters or less." };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ username: trimmed })
+      .eq("id", user.id);
+
+    if (error) {
+      if (error.code === "23505") return { error: "That username is already taken." };
+      return { error: "Could not save username. Please try again." };
+    }
+
+    revalidatePath("/dashboard");
+    return { error: null };
+  } catch {
+    return { error: "Something went wrong." };
+  }
+}
+
 // ─── Display name ────────────────────────────────────────────────────────────
 
 export async function updateDisplayName(
