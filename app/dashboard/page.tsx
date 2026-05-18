@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { logout } from "@/app/auth/actions";
 import TaskForm from "@/app/dashboard/TaskForm";
 import TaskItem from "@/app/dashboard/TaskItem";
+import LiveClock from "@/app/dashboard/LiveClock";
 
 // --- Badge helpers ---
 
@@ -34,7 +35,7 @@ export default async function DashboardPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_points, current_streak, last_completed_date")
+    .select("total_points, current_streak, last_completed_date, timezone")
     .eq("id", user.id)
     .single();
 
@@ -51,14 +52,15 @@ export default async function DashboardPage() {
   const completedCount = tasks?.filter((t) => t.completed).length ?? 0;
   const totalCount     = tasks?.length ?? 0;
 
-  const yesterdayStr = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split("T")[0];
-  })();
+  const tz = profile?.timezone ?? "UTC";
+  const localDate = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
   const streakAtRisk =
     currentStreak > 0 &&
-    profile?.last_completed_date === yesterdayStr;
+    profile?.last_completed_date === localDate(yesterday);
 
   const badge    = getBadge(totalPoints);
   const progress = getBadgeProgress(totalPoints);
@@ -73,6 +75,7 @@ export default async function DashboardPage() {
           <span className="text-xl font-extrabold text-violet-600">TickIt</span>
         </div>
         <div className="flex items-center gap-3">
+          <LiveClock timezone={tz} />
           <span className="text-gray-400 text-sm hidden sm:block truncate max-w-[160px]">
             {user.email}
           </span>

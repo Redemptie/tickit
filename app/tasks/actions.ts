@@ -85,10 +85,10 @@ export async function toggleTask(
 
     if (taskError) return { error: "Could not update the task. Please try again." };
 
-    // Fetch profile for points + streak
+    // Fetch profile for points + streak + timezone
     const { data: profile } = await supabase
       .from("profiles")
-      .select("total_points, current_streak, last_completed_date")
+      .select("total_points, current_streak, last_completed_date, timezone")
       .eq("id", user.id)
       .single();
 
@@ -98,10 +98,14 @@ export async function toggleTask(
     const newPoints = Math.max(0, currentPoints + pointsChange);
 
     if (nowCompleted) {
-      const today = new Date().toISOString().split("T")[0];
-      const yesterdayDate = new Date();
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterday = yesterdayDate.toISOString().split("T")[0];
+      const tz = profile?.timezone ?? "UTC";
+      const localDate = (d: Date) =>
+        new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const today = localDate(now);
+      const yesterdayStr = localDate(yesterday);
 
       const lastDate = profile?.last_completed_date ?? null;
       const currentStreak = profile?.current_streak ?? 0;
@@ -111,7 +115,7 @@ export async function toggleTask(
         newStreak = 1;
       } else if (lastDate === today) {
         newStreak = currentStreak;
-      } else if (lastDate === yesterday) {
+      } else if (lastDate === yesterdayStr) {
         newStreak = currentStreak + 1;
       } else {
         newStreak = 1;

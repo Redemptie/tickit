@@ -22,13 +22,15 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
       setLoading(false);
     } else {
-      // Login worked — go to dashboard
+      // Save the browser's timezone to the user's profile
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      await supabase.from("profiles").update({ timezone: tz }).eq("id", data.user.id);
       router.push("/dashboard");
     }
   }
