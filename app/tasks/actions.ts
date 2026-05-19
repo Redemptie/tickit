@@ -224,7 +224,6 @@ export async function updateTimezone(
       .eq("id", user.id);
 
     if (error) return { error: "Could not save timezone." };
-    revalidatePath("/dashboard");
     return { error: null };
   } catch {
     return { error: "Something went wrong." };

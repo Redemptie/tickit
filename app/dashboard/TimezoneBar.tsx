@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { updateTimezone } from "@/app/tasks/actions";
 
 const TIMEZONES = [
@@ -38,11 +38,15 @@ export default function TimezoneBar({ initialTimezone }: { initialTimezone: stri
   const [time, setTime] = useState("");
   const [, startTransition] = useTransition();
 
+  // Ref always holds the latest timezone so the interval never needs to restart
+  const tzRef = useRef(timezone);
+  tzRef.current = timezone;
+
   useEffect(() => {
     function tick() {
       setTime(
         new Intl.DateTimeFormat("en-GB", {
-          timeZone: timezone,
+          timeZone: tzRef.current,
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
@@ -53,11 +57,11 @@ export default function TimezoneBar({ initialTimezone }: { initialTimezone: stri
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [timezone]);
+  }, []); // runs once; timezone changes are picked up via tzRef
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const tz = e.target.value;
-    setTimezone(tz);
+    setTimezone(tz);          // updates tzRef.current on next render
     startTransition(async () => {
       await updateTimezone(tz);
     });
