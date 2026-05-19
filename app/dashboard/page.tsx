@@ -35,11 +35,32 @@ export default async function DashboardPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("total_points, current_streak, last_completed_date, timezone")
+    .select("total_points, current_streak, last_completed_date, timezone, last_reset_date")
     .eq("id", user.id)
     .single();
 
-  // Fetch tasks — incomplete first, then complete; within each group newest first
+  // Timezone helpers (needed before task fetch so reset uses correct local date)
+  const tz = profile?.timezone ?? "UTC";
+  const localDate = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+  const now = new Date();
+  const todayLocal = localDate(now);
+
+  // Daily reset — if the last reset wasn't today, uncheck all completed tasks
+  if (profile && profile.last_reset_date !== todayLocal) {
+    await supabase
+      .from("tasks")
+      .update({ completed: false, completed_at: null })
+      .eq("user_id", user.id)
+      .eq("completed", true);
+
+    await supabase
+      .from("profiles")
+      .update({ last_reset_date: todayLocal })
+      .eq("id", user.id);
+  }
+
+  // Fetch tasks after potential reset — incomplete first, then complete; newest first within each group
   const { data: tasks } = await supabase
     .from("tasks")
     .select("id, title, completed, points, category, created_at")
@@ -52,10 +73,6 @@ export default async function DashboardPage() {
   const completedCount = tasks?.filter((t) => t.completed).length ?? 0;
   const totalCount     = tasks?.length ?? 0;
 
-  const tz = profile?.timezone ?? "UTC";
-  const localDate = (d: Date) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
-  const now = new Date();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const streakAtRisk =
