@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { logout } from "@/app/auth/actions";
 import TaskForm from "@/app/dashboard/TaskForm";
 import TaskItem from "@/app/dashboard/TaskItem";
-import LiveClock from "@/app/dashboard/LiveClock";
+import TimezoneBar from "@/app/dashboard/TimezoneBar";
 
 // --- Badge helpers ---
 
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
           <span className="text-xl font-extrabold text-violet-600">TickIt</span>
         </div>
         <div className="flex items-center gap-3">
-          <LiveClock timezone={tz} />
+          <TimezoneBar initialTimezone={tz} />
           <span className="text-gray-400 text-sm hidden sm:block truncate max-w-[160px]">
             {user.email}
           </span>

@@ -208,6 +208,29 @@ export async function updateTask(
   }
 }
 
+// ─── Update timezone ─────────────────────────────────────────────────────────
+
+export async function updateTimezone(
+  timezone: string
+): Promise<{ error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "You must be logged in." };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ timezone })
+      .eq("id", user.id);
+
+    if (error) return { error: "Could not save timezone." };
+    revalidatePath("/dashboard");
+    return { error: null };
+  } catch {
+    return { error: "Something went wrong." };
+  }
+}
+
 // ─── Delete ───────────────────────────────────────────────────────────────────
 
 export async function deleteTask(
