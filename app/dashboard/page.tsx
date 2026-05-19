@@ -1,6 +1,8 @@
 // Dashboard — only accessible to logged-in users.
 // Server Component: all data is fetched before the page renders.
 
+export const dynamic = "force-dynamic";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { logout } from "@/app/auth/actions";
